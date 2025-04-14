@@ -14,6 +14,9 @@ type BorrowRequest struct {
 	Borrower string `json:"borrower" binding:"required"`
 	Note     string `json:"note" binding:"required"`
 }
+type ReturnRequest struct {
+	Borrower string `json:"borrower" binding:"required"`
+}
 
 // GetAll 獲取所有 book
 func (t LibraryController) GetAll(c *gin.Context) {
@@ -117,6 +120,30 @@ func (t LibraryController) Borrow(c *gin.Context) {
 			models.Libraries[i].Status = "borrowed"
 			models.Libraries[i].Borrower = borrowRequest.Borrower
 			models.Libraries[i].Note = borrowRequest.Note
+			models.Libraries[i].BorrowedAt = &now
+			c.JSON(http.StatusOK, models.Libraries[i])
+			return
+		}
+	}
+	c.JSON(http.StatusNotFound, gin.H{"message": "Book not found"})
+}
+
+//還書
+func (t LibraryController) Return(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var returnRequest ReturnRequest
+	now := time.Now()
+	if err := c.ShouldBindJSON(&returnRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	for i, book := range models.Libraries {
+		if id == book.ID {
+
+			models.Libraries[i].Status = "available"
+			models.Libraries[i].Borrower = ""
+			models.Libraries[i].Note = ""
 			models.Libraries[i].BorrowedAt = &now
 			c.JSON(http.StatusOK, models.Libraries[i])
 			return
