@@ -24,4 +24,19 @@ type ReturnRequest struct {
 	Borrower string `json:"borrower" binding:"required"`
 }
 
+// 書籍狀態常量
+const (
+    StatusAvailable = "available"  // 可借狀態
+    StatusBorrowed  = "borrowed"   // 已借出狀態
+)
+
+// 其他錯誤訊息常量
+const (
+    ErrBookNotFound     = "Book not found"
+    ErrInvalidID        = "Invalid ID format"
+    ErrBookBorrowed     = "Book is already borrowed"
+    ErrBookNotBorrowed  = "Book is not borrowed"
+    ErrWrongBorrower    = "Only the borrower can return this book"
+		ErrRequiredFields   = "新增書籍必須包含title、isbn、author!"
+)
 var Libraries = make([]Book, 0)
