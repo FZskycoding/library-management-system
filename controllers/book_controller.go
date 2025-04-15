@@ -11,7 +11,7 @@ import (
 
 type LibraryController struct{}
 
-//獲取所有 book
+// 獲取所有 book
 func (t LibraryController) GetAll(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.Libraries)
@@ -137,7 +137,17 @@ func (lt LibraryController) Return(c *gin.Context) {
 
 	for i, book := range models.Libraries {
 		if id == book.ID {
+			// 檢查書是否已被借出
+			if book.Status == "available" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Book is not borrowed"})
+				return
+			}
 
+			// 檢查還書的人是否為借書的人
+			if book.Borrower != returnRequest.Borrower {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Only the borrower can return this book"})
+				return
+			}
 			models.Libraries[i].Status = "available"
 			models.Libraries[i].Borrower = ""
 			models.Libraries[i].Note = ""
