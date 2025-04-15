@@ -4,11 +4,11 @@ import (
 	"time"
 )
 
-type Library struct {
+type Book struct {
 	ID         int        `json:"id"`
-	Title      string     `json:"title"`
-	Author     string     `json:"author"`
-	ISBN       string     `json:"isbn"`
+	Title      string     `json:"title" binding:"required"`
+	Author     string     `json:"author" binding:"required"`
+	ISBN       string     `json:"isbn" binding:"required"`
 	Status     string     `json:"status"`
 	BorrowedAt *time.Time `json:"borrowed_at,omitempty"`
 	Borrower   string     `json:"borrower,omitempty"`
@@ -23,4 +23,5 @@ type BorrowRequest struct {
 type ReturnRequest struct {
 	Borrower string `json:"borrower" binding:"required"`
 }
-var Libraries = make([]Library, 0)
+
+var Libraries = make([]Book, 0)

@@ -11,7 +11,7 @@ func initializeBooks() {
     // 檢查是否已有書籍
     if len(models.Libraries) == 0 {
         // 加入預設書籍
-        defaultBooks := []models.Library{
+        defaultBooks := []models.Book{
             {
                 ID:     1,
                 Title:  "哈利波特：神秘的魔法石",

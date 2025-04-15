@@ -11,7 +11,7 @@ import (
 
 type LibraryController struct{}
 
-// GetAll 獲取所有 book
+//獲取所有 book
 func (t LibraryController) GetAll(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.Libraries)
@@ -19,14 +19,13 @@ func (t LibraryController) GetAll(c *gin.Context) {
 
 // 建立book
 func (lt LibraryController) Create(c *gin.Context) {
-	var book models.Library
+	var book models.Book
 	if err := c.ShouldBindJSON(&book); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "新增書籍必須包含title、isbn、author!"})
 		return
 	}
 
 	book.ID = len(models.Libraries) + 1
-	// book.BorrowedAt = time.Now()
 	book.Status = "available"
 	models.Libraries = append(models.Libraries, book)
 	c.JSON(http.StatusCreated, book)
@@ -52,7 +51,7 @@ func (lt LibraryController) Update(c *gin.Context) {
 		return
 	}
 
-	var updatedBook models.Library
+	var updatedBook models.Book
 
 	if err := c.ShouldBindJSON(&updatedBook); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
