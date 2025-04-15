@@ -10,13 +10,6 @@ import (
 )
 
 type LibraryController struct{}
-type BorrowRequest struct {
-	Borrower string `json:"borrower" binding:"required"`
-	Note     string `json:"note" binding:"required"`
-}
-type ReturnRequest struct {
-	Borrower string `json:"borrower" binding:"required"`
-}
 
 // GetAll 獲取所有 book
 func (t LibraryController) GetAll(c *gin.Context) {
@@ -25,7 +18,7 @@ func (t LibraryController) GetAll(c *gin.Context) {
 }
 
 // 建立book
-func (t LibraryController) Create(c *gin.Context) {
+func (lt LibraryController) Create(c *gin.Context) {
 	var book models.Library
 	if err := c.ShouldBindJSON(&book); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -40,7 +33,7 @@ func (t LibraryController) Create(c *gin.Context) {
 }
 
 // 查詢特定的書
-func (t LibraryController) GetByID(c *gin.Context) {
+func (lt LibraryController) GetByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	for _, book := range models.Libraries {
 		if book.ID == id {
@@ -52,10 +45,10 @@ func (t LibraryController) GetByID(c *gin.Context) {
 }
 
 // 更新書籍訊息
-func (t LibraryController) Update(c *gin.Context) {
+func (lt LibraryController) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID format"})
 		return
 	}
 
@@ -70,16 +63,16 @@ func (t LibraryController) Update(c *gin.Context) {
 		if id == book.ID {
 			updatedBook.ID = id
 
-			if updatedBook.Title != ""{
+			if updatedBook.Title != "" {
 				models.Libraries[i].Title = updatedBook.Title
 			}
-			if updatedBook.Author != ""{
+			if updatedBook.Author != "" {
 				models.Libraries[i].Author = updatedBook.Author
 			}
-			if updatedBook.ISBN != ""{
+			if updatedBook.ISBN != "" {
 				models.Libraries[i].ISBN = updatedBook.ISBN
 			}
-			if updatedBook.Status != ""{
+			if updatedBook.Status != "" {
 				models.Libraries[i].Status = updatedBook.Status
 			}
 			// models.Libraries[i] = updatedBook
@@ -91,7 +84,7 @@ func (t LibraryController) Update(c *gin.Context) {
 }
 
 // 刪除書籍訊息
-func (t LibraryController) Delete(c *gin.Context) {
+func (lt LibraryController) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
 	for i, book := range models.Libraries {
@@ -105,9 +98,10 @@ func (t LibraryController) Delete(c *gin.Context) {
 }
 
 // 借書
-func (t LibraryController) Borrow(c *gin.Context) {
+func (lt LibraryController) Borrow(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var borrowRequest BorrowRequest
+
+	var borrowRequest models.BorrowRequest
 	now := time.Now()
 	if err := c.ShouldBindJSON(&borrowRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -116,7 +110,11 @@ func (t LibraryController) Borrow(c *gin.Context) {
 
 	for i, book := range models.Libraries {
 		if id == book.ID {
-
+			//檢查是否已被借出
+			if models.Libraries[i].Status == "borrowed" {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "Book is already borrowed"})
+				return
+			}
 			models.Libraries[i].Status = "borrowed"
 			models.Libraries[i].Borrower = borrowRequest.Borrower
 			models.Libraries[i].Note = borrowRequest.Note
@@ -128,10 +126,10 @@ func (t LibraryController) Borrow(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{"message": "Book not found"})
 }
 
-//還書
-func (t LibraryController) Return(c *gin.Context) {
+// 還書
+func (lt LibraryController) Return(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var returnRequest ReturnRequest
+	var returnRequest models.ReturnRequest
 	now := time.Now()
 	if err := c.ShouldBindJSON(&returnRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

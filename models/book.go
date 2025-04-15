@@ -15,4 +15,12 @@ type Library struct {
 	Note       string     `json:"note,omitempty"`
 }
 
+type BorrowRequest struct {
+	Borrower string `json:"borrower" binding:"required"`
+	Note     string `json:"note" binding:"required"`
+}
+
+type ReturnRequest struct {
+	Borrower string `json:"borrower" binding:"required"`
+}
 var Libraries = make([]Library, 0)
