@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"library-sys/database"
 	"library-sys/models"
 	"net/http"
 	"strconv"
@@ -12,9 +13,16 @@ import (
 type LibraryController struct{}
 
 // 獲取所有 book
-func (t LibraryController) GetAll(c *gin.Context) {
+func (lt LibraryController) GetAll(c *gin.Context) {
+	db := database.GetDB()
+	var books []models.Book
 
-	c.JSON(http.StatusOK, models.Libraries)
+	result := db.Find(&books)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching books"})
+		return
+	}
+	c.JSON(http.StatusOK, books)
 }
 
 // 建立book
@@ -25,9 +33,12 @@ func (lt LibraryController) Create(c *gin.Context) {
 		return
 	}
 
-	book.ID = len(models.Libraries) + 1
 	book.Status = models.StatusAvailable
-	models.Libraries = append(models.Libraries, book)
+	db := database.GetDB()
+	if err := db.Create(&book).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating book"})
+		return
+	}
 	c.JSON(http.StatusCreated, book)
 }
 
@@ -39,13 +50,14 @@ func (lt LibraryController) GetByID(c *gin.Context) {
 		return
 	}
 
-	for _, book := range models.Libraries {
-		if book.ID == id {
-			c.JSON(http.StatusOK, book)
-			return
-		}
+	var book models.Book
+	db := database.GetDB()
+	if err := db.First(&book, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+
+	c.JSON(http.StatusOK, book)
 }
 
 // 更新書籍訊息
@@ -56,30 +68,32 @@ func (lt LibraryController) Update(c *gin.Context) {
 		return
 	}
 
-	var updatedBook models.Book
+	var book models.Book
+	db := database.GetDB()
 
+	// 檢查書籍是否存在
+	if err := db.First(&book, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+		return
+	}
+
+	// 讀取更新的資料
+	var updatedBook models.Book
 	if err := c.ShouldBindJSON(&updatedBook); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// 只更新允許的欄位
+	book.Title = updatedBook.Title
+	book.Author = updatedBook.Author
+	book.ISBN = updatedBook.ISBN
 
-	for i, book := range models.Libraries {
-		if id == book.ID {
-			// 保留原有的 ID
-			updatedBook.ID = book.ID
-			// 保留借閱相關資訊
-			updatedBook.Status = book.Status
-			updatedBook.BorrowedAt = book.BorrowedAt
-			updatedBook.Borrower = book.Borrower
-			updatedBook.Note = book.Note
-
-			// 直接更新整個結構體
-			models.Libraries[i] = updatedBook
-			c.JSON(http.StatusOK, updatedBook)
-			return
-		}
+	if err := db.Save(&book).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating book"})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+
+	c.JSON(http.StatusOK, book)
 }
 
 // 刪除書籍訊息
@@ -90,14 +104,18 @@ func (lt LibraryController) Delete(c *gin.Context) {
 		return
 	}
 
-	for i, book := range models.Libraries {
-		if id == book.ID {
-			models.Libraries = append(models.Libraries[:i], models.Libraries[i+1:]...)
-			c.JSON(http.StatusOK, gin.H{"message": "Book deleted successfully"})
-			return
-		}
+	db := database.GetDB()
+	result := db.Delete(&models.Book{}, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting book"})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+	// 沒有任何記錄被刪除，表示要刪除的 ID 不存在
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Book deleted successfully"})
 }
 
 // 借書
@@ -109,28 +127,43 @@ func (lt LibraryController) Borrow(c *gin.Context) {
 	}
 
 	var borrowRequest models.BorrowRequest
-	now := time.Now()
 	if err := c.ShouldBindJSON(&borrowRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	for i, book := range models.Libraries {
-		if id == book.ID {
-			//檢查是否已被借出
-			if models.Libraries[i].Status == models.StatusBorrowed {
-				c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrBookBorrowed})
-				return
-			}
-			models.Libraries[i].Status = models.StatusBorrowed
-			models.Libraries[i].Borrower = borrowRequest.Borrower
-			models.Libraries[i].Note = borrowRequest.Note
-			models.Libraries[i].BorrowedAt = &now
-			c.JSON(http.StatusOK, models.Libraries[i])
-			return
-		}
+	db := database.GetDB()
+	var book models.Book
+
+	// 使用交易確保操作的一致性 
+	tx := db.Begin()
+
+	if err := tx.First(&book, id).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+
+	if book.Status == models.StatusBorrowed {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrBookBorrowed})
+		return
+	}
+
+	now := time.Now()
+	book.Status = models.StatusBorrowed
+	book.Borrower = borrowRequest.Borrower
+	book.Note = borrowRequest.Note
+	book.BorrowedAt = &now
+
+	if err := tx.Save(&book).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating book"})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, book)
 }
 
 // 還書
@@ -146,26 +179,40 @@ func (lt LibraryController) Return(c *gin.Context) {
 		return
 	}
 
-	for i, book := range models.Libraries {
-		if id == book.ID {
-			// 檢查書是否已被借出
-			if book.Status == models.StatusAvailable {
-				c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrBookNotBorrowed})
-				return
-			}
+	db := database.GetDB()
+	var book models.Book
 
-			// 檢查還書的人是否為借書的人
-			if book.Borrower != returnRequest.Borrower {
-				c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrWrongBorrower})
-				return
-			}
-			models.Libraries[i].Status = models.StatusAvailable
-			models.Libraries[i].Borrower = ""
-			models.Libraries[i].Note = ""
-			models.Libraries[i].BorrowedAt = nil
-			c.JSON(http.StatusOK, models.Libraries[i])
-			return
-		}
+	// 使用事務確保操作的一致性
+	tx := db.Begin()
+	if err := tx.First(&book, id).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+		return
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound})
+
+	if book.Status == models.StatusAvailable {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrBookNotBorrowed})
+		return
+	}
+
+	if book.Borrower != returnRequest.Borrower {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrWrongBorrower})
+		return
+	}
+
+	book.Status = models.StatusAvailable
+	book.Borrower = ""
+	book.Note = ""
+	book.BorrowedAt = nil
+
+	if err := tx.Save(&book).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating book"})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, book)
 }

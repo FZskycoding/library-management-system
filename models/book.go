@@ -2,10 +2,13 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Book struct {
-	ID         int        `json:"id"`
+	gorm.Model            // 這會自動添加 ID, CreatedAt, UpdatedAt, DeletedAt 欄位
+	
 	Title      string     `json:"title" binding:"required"`
 	Author     string     `json:"author" binding:"required"`
 	ISBN       string     `json:"isbn" binding:"required"`
@@ -26,17 +29,17 @@ type ReturnRequest struct {
 
 // 書籍狀態常量
 const (
-    StatusAvailable = "available"  // 可借狀態
-    StatusBorrowed  = "borrowed"   // 已借出狀態
+	StatusAvailable = "available" // 可借狀態
+	StatusBorrowed  = "borrowed"  // 已借出狀態
 )
 
 // 其他錯誤訊息常量
 const (
-    ErrBookNotFound     = "Book not found"
-    ErrInvalidID        = "Invalid ID format"
-    ErrBookBorrowed     = "Book is already borrowed"
-    ErrBookNotBorrowed  = "Book is not borrowed"
-    ErrWrongBorrower    = "Only the borrower can return this book"
-		ErrRequiredFields   = "新增書籍必須包含title、isbn、author!"
+	ErrBookNotFound    = "Book not found"
+	ErrInvalidID       = "Invalid ID format"
+	ErrBookBorrowed    = "Book is already borrowed"
+	ErrBookNotBorrowed = "Book is not borrowed"
+	ErrWrongBorrower   = "Only the borrower can return this book"
+	ErrRequiredFields  = "新增書籍必須包含title、isbn、author!"
 )
-var Libraries = make([]Book, 0)
+
