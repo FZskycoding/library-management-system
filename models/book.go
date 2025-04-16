@@ -7,11 +7,11 @@ import (
 )
 
 type Book struct {
-	gorm.Model            // 這會自動添加 ID, CreatedAt, UpdatedAt, DeletedAt 欄位
-	
+	gorm.Model // 這會自動添加 ID, CreatedAt, UpdatedAt, DeletedAt 欄位
+
 	Title      string     `json:"title" binding:"required"`
 	Author     string     `json:"author" binding:"required"`
-	ISBN       string     `json:"isbn" binding:"required"`
+	ISBN       string     `json:"isbn" binding:"required" gorm:"uniqueIndex"`
 	Status     string     `json:"status"`
 	BorrowedAt *time.Time `json:"borrowed_at,omitempty"`
 	Borrower   string     `json:"borrower,omitempty"`
@@ -41,5 +41,5 @@ const (
 	ErrBookNotBorrowed = "Book is not borrowed"
 	ErrWrongBorrower   = "Only the borrower can return this book"
 	ErrRequiredFields  = "新增書籍必須包含title、isbn、author!"
+	ErrDuplicateISBN   = "book with this ISBN already exists"
 )
-

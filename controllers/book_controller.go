@@ -33,8 +33,17 @@ func (lt LibraryController) Create(c *gin.Context) {
 		return
 	}
 
-	book.Status = models.StatusAvailable
+	// 先檢查 ISBN 是否存在
+	var existingBook models.Book
 	db := database.GetDB()
+	result := db.Where("isbn = ?", book.ISBN).First(&existingBook)
+	if result.Error == nil{
+		c.JSON(http.StatusBadRequest, gin.H{"error":models.ErrDuplicateISBN})
+		return
+	}
+
+
+	book.Status = models.StatusAvailable
 	if err := db.Create(&book).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating book"})
 		return
