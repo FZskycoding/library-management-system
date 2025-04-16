@@ -36,10 +36,16 @@ const (
 // 其他錯誤訊息常量
 const (
 	ErrBookNotFound    = "Book not found"
-	ErrInvalidID       = "Invalid ID format"
 	ErrBookBorrowed    = "Book is already borrowed"
 	ErrBookNotBorrowed = "Book is not borrowed"
-	ErrWrongBorrower   = "Only the borrower can return this book"
-	ErrRequiredFields  = "新增書籍必須包含title、isbn、author!"
-	ErrDuplicateISBN   = "book with this ISBN already exists"
+
+	ErrInvalidID      = "Invalid ID format"
+	ErrWrongBorrower  = "Only the borrower can return this book"
+	ErrRequiredFields = "Add new book should include title,isbn,author!"
+	ErrDuplicateISBN  = "book with this ISBN already exists"
+
+	ErrBookUpdate = "Error updating book"
+	ErrBookFetch  = "Error fetching books"
+	ErrBookDelete = "Error deleting book"
+	ErrBookCreate = "Error creating book"
 )
