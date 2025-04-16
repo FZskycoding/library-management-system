@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -33,19 +34,17 @@ const (
 	StatusBorrowed  = "borrowed"  // 已借出狀態
 )
 
-// 其他錯誤訊息常量
-const (
-	ErrBookNotFound    = "Book not found"
-	ErrBookBorrowed    = "Book is already borrowed"
-	ErrBookNotBorrowed = "Book is not borrowed"
-
-	ErrInvalidID      = "Invalid ID format"
-	ErrWrongBorrower  = "Only the borrower can return this book"
-	ErrRequiredFields = "Add new book should include title,isbn,author!"
-	ErrDuplicateISBN  = "book with this ISBN already exists"
-
-	ErrBookUpdate = "Error updating book"
-	ErrBookFetch  = "Error fetching books"
-	ErrBookDelete = "Error deleting book"
-	ErrBookCreate = "Error creating book"
+// 錯誤定義
+var (
+	ErrBookNotFound    = errors.New("Book not found")
+	ErrBookBorrowed    = errors.New("Book is already borrowed")
+	ErrBookNotBorrowed = errors.New("Book is not borrowed")
+	ErrInvalidID      = errors.New("Invalid ID format")
+	ErrWrongBorrower  = errors.New("Only the borrower can return this book")
+	ErrRequiredFields = errors.New("Add new book should include title,isbn,author!")
+	ErrDuplicateISBN  = errors.New("book with this ISBN already exists")
+	ErrBookUpdate     = errors.New("Error updating book")
+	ErrBookFetch      = errors.New("Error fetching books")
+	ErrBookDelete     = errors.New("Error deleting book")
+	ErrBookCreate     = errors.New("Error creating book")
 )
