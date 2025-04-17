@@ -21,11 +21,10 @@ func InitDB(config *config.Config) error {
 	}
 
 	// 自動遷移資料庫結構
-	err = DB.AutoMigrate(&models.Book{})
+	err = DB.AutoMigrate(&models.Book{}, &models.User{})
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"library-sys/database"
 	"library-sys/models"
 	"library-sys/services"
 	"net/http"
@@ -10,19 +9,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//定義管理員的工作
 type LibraryController struct {
 	bookService *services.BookService
 }
 
-// 改用函數來創建控制器
-func DefaultController() LibraryController {
-	return LibraryController{
-		bookService: services.CreateBookService(database.GetDB()),
+// 創建圖書管理員
+func NewLibraryController(bookService *services.BookService) *LibraryController {
+	return &LibraryController{
+		bookService: bookService, // 給管理員一個工具（書籍服務）
 	}
 }
 
 // 查詢所有 book
-func (lc LibraryController) GetAll(c *gin.Context) {
+func (lc *LibraryController) GetAll(c *gin.Context) {
 	books, err := lc.bookService.GetAllBooks()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": models.ErrBookFetch.Error()})
@@ -32,7 +32,7 @@ func (lc LibraryController) GetAll(c *gin.Context) {
 }
 
 // 建立book
-func (lc LibraryController) Create(c *gin.Context) {
+func (lc *LibraryController) Create(c *gin.Context) {
 	var book models.Book
 	if err := c.ShouldBindJSON(&book); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrRequiredFields.Error()})
@@ -52,7 +52,7 @@ func (lc LibraryController) Create(c *gin.Context) {
 }
 
 // 查詢特定的書
-func (lc LibraryController) GetByID(c *gin.Context) {
+func (lc *LibraryController) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})
@@ -69,7 +69,7 @@ func (lc LibraryController) GetByID(c *gin.Context) {
 }
 
 // 更新書籍訊息
-func (lc LibraryController) Update(c *gin.Context) {
+func (lc *LibraryController) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})
@@ -96,7 +96,7 @@ func (lc LibraryController) Update(c *gin.Context) {
 }
 
 // 刪除書籍訊息
-func (lc LibraryController) Delete(c *gin.Context) {
+func (lc *LibraryController) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})
@@ -117,7 +117,7 @@ func (lc LibraryController) Delete(c *gin.Context) {
 }
 
 // 借書
-func (lc LibraryController) Borrow(c *gin.Context) {
+func (lc *LibraryController) Borrow(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})
@@ -147,7 +147,7 @@ func (lc LibraryController) Borrow(c *gin.Context) {
 }
 
 // 還書
-func (lc LibraryController) Return(c *gin.Context) {
+func (lc *LibraryController) Return(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})

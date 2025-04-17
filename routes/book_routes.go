@@ -2,20 +2,36 @@ package routes
 
 import (
 	"library-sys/controllers"
+	"library-sys/middleware"
+	"library-sys/services"
+
 	"github.com/gin-gonic/gin"
 )
 
-func SetupBookRouters(router *gin.Engine) {
-	lc := controllers.DefaultController() 
+func SetupBookRouters(router *gin.Engine, authService *services.AuthService, bookService *services.BookService) {
+	// 創建控制器
+	authController := controllers.NewAuthController(authService)
+	bookController := controllers.NewLibraryController(bookService)
 
-	v1 := router.Group("/api/v1")
+	// 不需要認證的路由
+	public := router.Group("/api/v1")
 	{
-		v1.GET("/books", lc.GetAll)            //查詢所有書籍
-		v1.GET("/books/:id", lc.GetByID)       //查詢特定書籍
-		v1.POST("/books", lc.Create)           //新增書籍
-		v1.PUT("/books/:id", lc.Update)        //更新書籍信息
-		v1.DELETE("/books/:id", lc.Delete)     //刪除書籍
-		v1.PUT("/books/:id/borrow", lc.Borrow) //借書
-		v1.PUT("/books/:id/return", lc.Return) //還書
+		public.POST("/register", authController.Register)
+		public.POST("/login", authController.Login)
+		public.GET("/books", bookController.GetAll)      //查詢所有書籍
+		public.GET("/books/:id", bookController.GetByID) //查詢特定書籍
+	}
+
+	// 需要認證的路由
+	protected := router.Group("/api/v1").Use(middleware.JWTAuthMiddleware(authService))
+	{
+		protected.POST("/books", bookController.Create)           //新增書籍
+		protected.PUT("/books/:id", bookController.Update)        //更新書籍信息
+		protected.DELETE("/books/:id", bookController.Delete)     //刪除書籍
+		protected.PUT("/books/:id/borrow", bookController.Borrow) //借書
+		protected.PUT("/books/:id/return", bookController.Return) //還書
+
+		// 用戶相關路由
+		protected.GET("/me", authController.GetCurrentUser)
 	}
 }
