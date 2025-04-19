@@ -21,7 +21,7 @@ func InitDB(config *config.Config) error {
 	}
 
 	// 自動遷移資料庫結構
-	err = DB.AutoMigrate(&models.Book{}, &models.User{})
+	err = DB.AutoMigrate(&models.Book{}, &models.User{}, &models.TokenBlacklist{})
 	if err != nil {
 		return err
 	}

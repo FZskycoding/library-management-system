@@ -30,8 +30,9 @@ func SetupBookRouters(router *gin.Engine, authService *services.AuthService, boo
 		protected.DELETE("/books/:id", bookController.Delete)     //刪除書籍
 		protected.PUT("/books/:id/borrow", bookController.Borrow) //借書
 		protected.PUT("/books/:id/return", bookController.Return) //還書
-
 		// 用戶相關路由
 		protected.GET("/me", authController.GetCurrentUser)
+		protected.POST("/logout", authController.Logout)
+
 	}
 }

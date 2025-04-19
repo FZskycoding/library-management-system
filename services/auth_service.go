@@ -17,7 +17,6 @@ type AuthService struct {
 	config *config.Config // 知道如何驗證會員證
 }
 
-
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
@@ -97,6 +96,11 @@ func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 
 // ValidateToken 驗證 JWT token
 func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
+	// 添加黑名單檢查
+	var blacklistedToken models.TokenBlacklist
+	if err := s.db.Where("token = ?", tokenString).First(&blacklistedToken).Error; err == nil {
+		return nil, errors.New("token has been revoked")
+	}
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -112,4 +116,20 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+func (s *AuthService) Logout(tokenString string) error {
+	// 先驗證 token
+	claims, err := s.ValidateToken(tokenString)
+	if err != nil {
+		return err
+	}
+
+	// 加入黑名單
+	blacklist := &models.TokenBlacklist{
+		Token:     tokenString,
+		ExpiresAt: time.Unix(claims.ExpiresAt.Unix(), 0),
+	}
+
+	return s.db.Create(blacklist).Error
 }

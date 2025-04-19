@@ -4,7 +4,7 @@ import (
 	"library-sys/models"
 	"library-sys/services"
 	"net/http"
-
+	"strings"
 	"github.com/gin-gonic/gin"
 )
 
@@ -65,6 +65,28 @@ func (ac *AuthController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Logout 處理用戶登出
+func (ac *AuthController) Logout(c *gin.Context) {
+    // 從 header 獲取 token
+    token := c.GetHeader("Authorization")
+    if token == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "No token provided"})
+        return
+    }
+    
+    // 移除 "Bearer " 前綴
+    token = strings.TrimPrefix(token, "Bearer ")
+    
+    // 調用服務層的登出方法
+    if err := ac.authService.Logout(token); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error": "Logout failed: " + err.Error(),
+        })
+        return
+    }
+    
+    c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
 // GetCurrentUser 獲取當前用戶信息
 func (ac *AuthController) GetCurrentUser(c *gin.Context) {
 	// 從上下文中獲取用戶信息
