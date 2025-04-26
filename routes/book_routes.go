@@ -14,16 +14,16 @@ func SetupBookRouters(router *gin.Engine, authService *services.AuthService, boo
 	bookController := controllers.NewLibraryController(bookService)
 
 	// 不需要認證的路由
-	public := router.Group("/api/v1")
+	public := router.Group("/")
 	{
-		public.POST("/register", authController.Register)
-		public.POST("/login", authController.Login)
-		public.GET("/books", bookController.GetAll)      //查詢所有書籍
-		public.GET("/books/:id", bookController.GetByID) //查詢特定書籍
+		public.POST("/register", authController.Register) //註冊
+		public.POST("/login", authController.Login)       //登入
+		public.GET("/books", bookController.GetAll)       //查詢所有書籍
+		public.GET("/books/:id", bookController.GetByID)  //查詢特定書籍
 	}
 
 	// 需要認證的路由
-	protected := router.Group("/api/v1").Use(middleware.JWTAuthMiddleware(authService))
+	protected := router.Group("/").Use(middleware.JWTAuthMiddleware(authService))
 	{
 		protected.POST("/books", bookController.Create)           //新增書籍
 		protected.PUT("/books/:id", bookController.Update)        //更新書籍信息
@@ -31,8 +31,8 @@ func SetupBookRouters(router *gin.Engine, authService *services.AuthService, boo
 		protected.PUT("/books/:id/borrow", bookController.Borrow) //借書
 		protected.PUT("/books/:id/return", bookController.Return) //還書
 		// 用戶相關路由
-		protected.GET("/me", authController.GetCurrentUser)
-		protected.POST("/logout", authController.Logout)
+		protected.GET("/me", authController.GetCurrentUser) // 查詢userid
+		protected.POST("/logout", authController.Logout) // 登出	
 
 	}
 }
