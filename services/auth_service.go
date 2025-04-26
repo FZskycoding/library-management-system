@@ -11,10 +11,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// 這是會員服務處的專業人員，負責：
 type AuthService struct {
-	db     *gorm.DB       // 可以查詢會員資料庫
-	config *config.Config // 知道如何驗證會員證
+	db     *gorm.DB
+	config *config.Config
 }
 
 type Claims struct {
@@ -34,7 +33,7 @@ func CreateAuthService(db *gorm.DB, config *config.Config) *AuthService {
 func (s *AuthService) Register(req *models.RegisterRequest) error {
 	// 檢查用戶名是否已存在
 	var existingUser models.User
-	if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+	if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error;err == nil{
 		return errors.New("username already exists")
 	}
 
@@ -49,7 +48,9 @@ func (s *AuthService) Register(req *models.RegisterRequest) error {
 		Username: req.Username,
 		Password: string(hashedPassword),
 	}
+
 	return s.db.Create(user).Error
+
 }
 
 // Login 用戶登入
