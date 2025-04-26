@@ -26,14 +26,12 @@
 - 資料庫：PostgreSQL
 - ORM：GORM
 - 認證：JWT (JSON Web Token)
-- API 文件：待添加
-
 
 ## 快速開始
 
 1. 克隆專案
 ```bash
-git clone [專案網址]
+git clone https://github.com/FZskycoding/library-management-system
 cd library-management-system
 ````
 
