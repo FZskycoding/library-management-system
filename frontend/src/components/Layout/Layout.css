@@ -30,7 +30,7 @@
     color: #ecf0f1;
 }
 
-.logout-btn {
+.logout-btn, .login-btn {
     background-color: transparent;
     border: 1px solid white;
     color: white;
@@ -41,7 +41,7 @@
     transition: background-color 0.3s;
 }
 
-.logout-btn:hover {
+.logout-btn:hover, .login-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 

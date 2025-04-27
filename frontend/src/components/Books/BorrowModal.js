@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { books } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const BorrowModal = ({ book, onClose, onSuccess }) => {
     const [note, setNote] = useState('');
     const [error, setError] = useState('');
+    const { user, isLoading } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading && !user) {
+            setError('您需要先登入才能借閱書籍');
+        }
+    }, [isLoading, user]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
+        if (!user) {
+            setError('您需要先登入才能借閱書籍');
+            return;
+        }
+
         try {
-            await books.borrow(book.ID, note);
+            await books.borrow(book.ID, note, user);
             onSuccess();
         } catch (err) {
             setError(err.message);
@@ -47,9 +60,13 @@ const BorrowModal = ({ book, onClose, onSuccess }) => {
                     </div>
 
                     <div className="form-actions">
-                        <button type="submit" className="submit-btn">
-                            確認借閱
-                        </button>
+                    <button 
+                        type="submit" 
+                        className="submit-btn"
+                        disabled={isLoading || !user}
+                    >
+                        {isLoading ? '載入中...' : '確認借閱'}
+                    </button>
                         <button
                             type="button"
                             onClick={onClose}

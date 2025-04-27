@@ -11,7 +11,7 @@ const BookList = () => {
     const [showBookForm, setShowBookForm] = useState(false);
     const [showBorrowModal, setShowBorrowModal] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     // 載入書籍列表
     const loadBooks = async () => {
@@ -43,11 +43,16 @@ const BookList = () => {
     };
 
     // 處理歸還
-    const handleReturn = async (bookId) => {
+    const handleReturn = async (bookId, borrower) => {
+        if (borrower !== user) {
+            alert('只有原借閱者才能歸還書籍');
+            return;
+        }
+
         if (!window.confirm('確定要歸還此書籍？')) return;
 
         try {
-            await books.return(bookId);
+            await books.return(bookId, user);
             loadBooks();
         } catch (error) {
             console.error('歸還失敗:', error);
@@ -128,12 +133,14 @@ const BookList = () => {
                                             借閱
                                         </button>
                                     ) : (
-                                        <button
-                                            onClick={() => handleReturn(book.ID)}
-                                            className="return-btn"
-                                        >
-                                            歸還
-                                        </button>
+                                        book.borrower === user && (
+                                            <button
+                                                onClick={() => handleReturn(book.ID, book.borrower)}
+                                                className="return-btn"
+                                            >
+                                                歸還
+                                            </button>
+                                        )
                                     )}
                                     <button
                                         onClick={() => handleEdit(book)}

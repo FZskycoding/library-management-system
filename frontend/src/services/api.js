@@ -27,16 +27,16 @@ async function fetchWithAuth(endpoint, options = {}) {
 
 // 認證相關API
 export const auth = {
-    login: (email, password) =>
+    login: (username, password) =>
         fetchWithAuth('/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ username, password }),
         }),
 
-    register: (email, password) =>
+    register: (username, password) =>
         fetchWithAuth('/register', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ username, password }),
         }),
 
     logout: () =>
@@ -73,15 +73,18 @@ export const books = {
             method: 'DELETE',
         }),
 
-    borrow: (id, note) =>
+    borrow: (id, note, borrower) =>
         fetchWithAuth(`/books/${id}/borrow`, {
             method: 'PUT',
-            body: JSON.stringify({ note }),
+            body: JSON.stringify({ 
+                note,
+                borrower 
+            }),
         }),
 
-    return: (id) =>
+    return: (id, borrower) =>
         fetchWithAuth(`/books/${id}/return`, {
             method: 'PUT',
-            body: JSON.stringify({}),
+            body: JSON.stringify({ borrower }),
         }),
 };

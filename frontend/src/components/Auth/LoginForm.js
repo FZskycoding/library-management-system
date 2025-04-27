@@ -3,9 +3,9 @@ import { auth } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
-const LoginForm = () => {
+const LoginForm = ({ onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
@@ -17,11 +17,12 @@ const LoginForm = () => {
         try {
             if (isLogin) {
                 // 登入
-                const data = await auth.login(email, password);
+                const data = await auth.login(username, password);
                 login(data.token);
+                onClose();  // 登入成功後關閉模態框
             } else {
                 // 註冊
-                await auth.register(email, password);
+                await auth.register(username, password);
                 setIsLogin(true);
                 alert('註冊成功！請登入');
             }
@@ -33,17 +34,20 @@ const LoginForm = () => {
     return (
         <div className="auth-container">
             <div className="auth-form">
-                <h2>{isLogin ? '登入' : '註冊'}</h2>
+                <div className="modal-header">
+                    <h2>{isLogin ? '登入' : '註冊'}</h2>
+                    <button onClick={onClose} className="close-btn">&times;</button>
+                </div>
                 {error && <div className="error-message">{error}</div>}
                 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="email">電子郵件</label>
+                        <label htmlFor="username">使用者名稱</label>
                         <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            type="text"
+                            id="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             required
                         />
                     </div>

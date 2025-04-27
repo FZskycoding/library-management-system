@@ -1,29 +1,29 @@
-import React from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Header from './components/Layout/Header';
-import LoginForm from './components/Auth/LoginForm';
-import BookList from './components/Books/BookList';
-import './App.css';
-
-// 主要內容元件
-const MainContent = () => {
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <div className="app">
-      <Header />
-      <main className="main-content">
-        {!isAuthenticated ? <LoginForm /> : <BookList />}
-      </main>
-    </div>
-  );
-};
+import React, { useState } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import Header from "./components/Layout/Header";
+import LoginForm from "./components/Auth/LoginForm";
+import BookList from "./components/Books/BookList";
+import "./App.css";
 
 // App元件
 const App = () => {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   return (
     <AuthProvider>
-      <MainContent />
+      <div className="app">
+        <Header onLoginClick={() => setShowLoginModal(true)} />
+        <main className="main-content">
+          <BookList />
+          {showLoginModal && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <LoginForm onClose={() => setShowLoginModal(false)} />
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </AuthProvider>
   );
 };
