@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
                 });
                 const data = await response.json();
                 // 確保使用者名稱為字串
-                setUser(data.username || String(data.user_id));
+                setUser(data.user_name || String(data.user_id));
             } catch (error) {
                 console.error('獲取用戶信息失敗:', error);
                 setToken(null);
