@@ -6,7 +6,9 @@ import (
 	"library-sys/routes"
 	"library-sys/services"
 	"log"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,9 +28,20 @@ func main() {
 	authService := services.CreateAuthService(db, cfg)
 	bookService := services.CreateBookService(db)
 
-	// 創建 Gin 引擎
-	r := gin.Default()
-	// 安排圖書館服務台
+// 創建 Gin 引擎
+r := gin.Default()
+
+// 配置CORS
+r.Use(cors.New(cors.Config{
+	AllowOrigins:     []string{"http://localhost:3000"},
+	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	ExposeHeaders:    []string{"Content-Length"},
+	AllowCredentials: true,
+	MaxAge:           12 * time.Hour,
+}))
+
+// 安排圖書館服務台
 	routes.SetupBookRouters(
 		r,
 		authService, //處理會員相關的服務
