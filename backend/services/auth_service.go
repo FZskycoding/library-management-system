@@ -4,6 +4,7 @@ import (
 	"errors"
 	"library-sys/config"
 	"library-sys/models"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -31,11 +32,18 @@ func CreateAuthService(db *gorm.DB, config *config.Config) *AuthService {
 
 // Register 註冊新用戶
 func (s *AuthService) Register(req *models.RegisterRequest) error {
+	// 移除首尾空格
+	req.Username = strings.TrimSpace(req.Username)
+
+// 檢查是否包含空格
+if strings.Contains(req.Username, " ") {
+return errors.New("使用者名稱不能包含空格")
+}
 	// 檢查用戶名是否已存在
 	var existingUser models.User
-	if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error;err == nil{
-		return errors.New("username already exists")
-	}
+if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+return errors.New("使用者名稱已被使用")
+}
 
 	//加密密碼
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -55,14 +63,21 @@ func (s *AuthService) Register(req *models.RegisterRequest) error {
 
 // Login 用戶登入
 func (s *AuthService) Login(req *models.LoginRequest) (*models.LoginResponse, error) {
+	// 移除首尾空格
+	req.Username = strings.TrimSpace(req.Username)
+	// 檢查是否包含空格
+if strings.Contains(req.Username, " "){
+return nil, errors.New("使用者名稱不能包含空格")
+}
+
 	var user models.User
 	if err := s.db.Where("username = ?", req.Username).First(&user).Error; err != nil {
-		return nil, errors.New("user not found")
+return nil, errors.New("找不到此使用者")
 	}
 
 	//驗證密碼
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid password")
+return nil, errors.New("密碼錯誤")
 	}
 
 	// 生成 Token
@@ -100,7 +115,7 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 	// 添加黑名單檢查
 	var blacklistedToken models.TokenBlacklist
 	if err := s.db.Where("token = ?", tokenString).First(&blacklistedToken).Error; err == nil {
-		return nil, errors.New("token has been revoked")
+return nil, errors.New("此登入憑證已失效")
 	}
 	claims := &Claims{}
 
@@ -113,7 +128,7 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	if !token.Valid {
-		return nil, errors.New("invalid token")
+return nil, errors.New("無效的登入憑證")
 	}
 
 	return claims, nil
