@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 )
 
 type DatabaseConfig struct {
@@ -18,31 +20,51 @@ type JWTConfig struct {
 	ExpireHours  int
 	RefreshHours int
 }
+
 type Config struct {
 	Database *DatabaseConfig
 	JWT      *JWTConfig
 }
 
-// 創建默認配置
+// getRequiredEnv 從環境變數獲取值，如果不存在則報錯
+func getRequiredEnv(key string) string {
+    value := os.Getenv(key)
+    if value == "" {
+        panic(fmt.Sprintf("必要的環境變數 %s 未設置", key))
+    }
+    return value
+}
+
+// getRequiredEnvInt 從環境變數獲取整數值，如果不存在或無法轉換則報錯
+func getRequiredEnvInt(key string) int {
+    value := getRequiredEnv(key)
+    intValue, err := strconv.Atoi(value)
+    if err != nil {
+        panic(fmt.Sprintf("環境變數 %s 必須是有效的整數", key))
+    }
+    return intValue
+}
+
+// NewConfig 創建新的配置，從環境變數讀取必要的設定
 func NewConfig() *Config {
 	return &Config{
-		Database: &DatabaseConfig{
-			Host:     "localhost",
-			Port:     "5432",      // PostgreSQL 默認端口
-			User:     "postgres",  // 你的資料庫用戶名
-			Password: "fei080808", // 你的資料庫密碼
-			DBName:   "library",   // 你的資料庫名稱
-			SSLMode:  "disable",   // 開發環境可以禁用 SSL
-		},
-		JWT: &JWTConfig{
-			SecretKey:    "your-secret-key-here", // 實際使用時應該使用環境變數
-			ExpireHours:  24,                     // Token 有效期 24 小時
-			RefreshHours: 72,                     // Refresh Token 有效期 72 小時
+Database: &DatabaseConfig{
+Host:     getRequiredEnv("DB_HOST"),
+Port:     getRequiredEnv("DB_PORT"),
+User:     getRequiredEnv("DB_USER"),
+Password: getRequiredEnv("DB_PASSWORD"),
+DBName:   getRequiredEnv("DB_NAME"),
+SSLMode:  getRequiredEnv("DB_SSLMODE"),
+},
+JWT: &JWTConfig{
+SecretKey:    getRequiredEnv("JWT_SECRET_KEY"),
+ExpireHours:  getRequiredEnvInt("JWT_EXPIRE_HOURS"),
+RefreshHours: getRequiredEnvInt("JWT_REFRESH_HOURS"),
 		},
 	}
 }
 
-// 生成資料庫連接字串的方法
+// GetDSN 生成資料庫連接字串
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",

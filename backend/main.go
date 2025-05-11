@@ -1,18 +1,24 @@
 package main
 
 import (
-	"library-sys/config"
-	"library-sys/database"
-	"library-sys/routes"
-	"library-sys/services"
-	"log"
-	"time"
+"library-sys/config"
+"library-sys/database"
+"library-sys/routes"
+"library-sys/services"
+"log"
+"time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+"github.com/gin-contrib/cors"
+"github.com/gin-gonic/gin"
+"github.com/joho/godotenv"
 )
 
 func main() {
+// 載入 .env 檔案
+if err := godotenv.Load(); err != nil {
+    log.Fatal("Error loading .env file:", err)
+}
+
 	// 載入配置
 	cfg := config.NewConfig()
 
