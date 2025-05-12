@@ -20,6 +20,7 @@ type AuthService struct {
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
+	IsAdmin  bool   `json:"is_admin"`
 	jwt.RegisteredClaims
 }
 
@@ -93,10 +94,11 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.LoginResponse, er
 // GenerateToken 生成 JWT token
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 	// 設置 JWT 聲明
-	claims := &Claims{
-		UserID:   user.ID,
-		Username: user.Username,
-		RegisteredClaims: jwt.RegisteredClaims{
+claims := &Claims{
+UserID:   user.ID,
+Username: user.Username,
+IsAdmin:  user.IsAdmin,
+RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(s.config.JWT.ExpireHours))),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),

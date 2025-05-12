@@ -9,6 +9,7 @@ type User struct {
 	gorm.Model
 	Username string `json:"username" gorm:"uniqueIndex;size:50;not null"`
 	Password string `json:"password" gorm:"size:100;not null"`
+	IsAdmin  bool   `json:"is_admin" gorm:"default:false"`
 }
 
 type LoginRequest struct {
@@ -17,10 +18,10 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-    Username string `json:"username" binding:"required,min=3,max=50"`
-    Password string `json:"password" binding:"required,min=6,max=50"`
+	Username string `json:"username" binding:"required,min=3,max=50"`
+	Password string `json:"password" binding:"required,min=6,max=50"`
 }
 
 type LoginResponse struct {
-    Token string `json:"token"`
+	Token string `json:"token"`
 }

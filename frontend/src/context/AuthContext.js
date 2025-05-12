@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
     // 獲取當前用戶信息
@@ -23,8 +24,9 @@ export const AuthProvider = ({ children }) => {
                     }
                 });
                 const data = await response.json();
-                // 確保使用者名稱為字串
+                // 更新用戶信息和管理員狀態
                 setUser(data.user_name || String(data.user_id));
+                setIsAdmin(data.is_admin || false);
             } catch (error) {
                 console.error('獲取用戶信息失敗:', error);
                 setToken(null);
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
+    setIsAdmin(false);
     localStorage.removeItem("token");
   };
 
@@ -56,6 +59,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!token,
+    isAdmin,
     isLoading,
   };
 

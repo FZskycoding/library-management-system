@@ -23,16 +23,20 @@ func SetupBookRouters(router *gin.Engine, authService *services.AuthService, boo
 	}
 
 	// 需要認證的路由
-	protected := router.Group("/").Use(middleware.JWTAuthMiddleware(authService))
+	protected := router.Group("/", middleware.JWTAuthMiddleware(authService))
 	{
-		protected.POST("/books", bookController.Create)           //新增書籍
-		protected.PUT("/books/:id", bookController.Update)        //更新書籍信息
-		protected.DELETE("/books/:id", bookController.Delete)     //刪除書籍
+		// 一般使用者可以使用的功能
 		protected.PUT("/books/:id/borrow", bookController.Borrow) //借書
 		protected.PUT("/books/:id/return", bookController.Return) //還書
-		// 用戶相關路由
-		protected.GET("/me", authController.GetCurrentUser) // 查詢userid
-		protected.POST("/logout", authController.Logout) // 登出	
+		protected.GET("/me", authController.GetCurrentUser)       // 查詢userid
+		protected.POST("/logout", authController.Logout)          // 登出
+	}
 
+	// 需要管理員權限的路由
+	admin := router.Group("/", middleware.JWTAuthMiddleware(authService), middleware.AdminAuthMiddleware())
+	{
+		admin.POST("/books", bookController.Create)       //新增書籍
+		admin.PUT("/books/:id", bookController.Update)    //更新書籍信息
+		admin.DELETE("/books/:id", bookController.Delete) //刪除書籍
 	}
 }

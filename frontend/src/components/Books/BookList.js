@@ -11,7 +11,7 @@ const BookList = () => {
     const [showBookForm, setShowBookForm] = useState(false);
     const [showBorrowModal, setShowBorrowModal] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, isAdmin } = useAuth();
 
     // 載入書籍列表
     const loadBooks = async () => {
@@ -89,7 +89,7 @@ const BookList = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="search-input"
                 />
-                {isAuthenticated && (
+                {isAuthenticated && isAdmin && (
                     <button
                         onClick={() => {
                             setSelectedBook(null);
@@ -142,18 +142,22 @@ const BookList = () => {
                                             </button>
                                         )
                                     )}
-                                    <button
-                                        onClick={() => handleEdit(book)}
-                                        className="edit-btn"
-                                    >
-                                        編輯
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(book.ID)}
-                                        className="delete-btn"
-                                    >
-                                        刪除
-                                    </button>
+                                    {isAdmin && (
+                                        <>
+                                            <button
+                                                onClick={() => handleEdit(book)}
+                                                className="edit-btn"
+                                            >
+                                                編輯
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(book.ID)}
+                                                className="delete-btn"
+                                            >
+                                                刪除
+                                            </button>
+                                        </>
+                                    )}
                                 </td>
                             )}
                         </tr>

@@ -4,6 +4,7 @@ import (
 	"library-sys/config"
 	"library-sys/models"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -25,6 +26,28 @@ func InitDB(config *config.Config) error {
 	if err != nil {
 		return err
 	}
+
+	// 檢查並創建管理員帳號
+	var adminUser models.User
+	result := DB.Where("username = ?", config.Admin.Username).First(&adminUser)
+	if result.RowsAffected == 0 {
+		// 加密密碼
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(config.Admin.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+
+		// 創建管理員用戶
+		adminUser = models.User{
+			Username: config.Admin.Username,
+			Password: string(hashedPassword),
+			IsAdmin:  true,
+		}
+		if err := DB.Create(&adminUser).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
