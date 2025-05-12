@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//定義管理員的工作
+// 定義管理員的工作
 type LibraryController struct {
 	bookService *services.BookService
 }
@@ -76,6 +76,19 @@ func (lc *LibraryController) Update(c *gin.Context) {
 		return
 	}
 
+	// 先檢查書籍狀態
+	existingBook, err := lc.bookService.GetBookByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound.Error()})
+		return
+	}
+
+	// 如果書籍已借出，不允許編輯
+	if existingBook.Status == "borrowed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "已借出的書籍不能編輯"})
+		return
+	}
+
 	var updatedBook models.Book
 	if err := c.ShouldBindJSON(&updatedBook); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -100,6 +113,19 @@ func (lc *LibraryController) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": models.ErrInvalidID.Error()})
+		return
+	}
+
+	// 先檢查書籍狀態
+	existingBook, err := lc.bookService.GetBookByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": models.ErrBookNotFound.Error()})
+		return
+	}
+
+	// 如果書籍已借出，不允許刪除
+	if existingBook.Status == "borrowed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "已借出的書籍不能刪除"})
 		return
 	}
 

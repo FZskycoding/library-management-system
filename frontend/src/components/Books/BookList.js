@@ -142,7 +142,7 @@ const BookList = () => {
                                             </button>
                                         )
                                     )}
-                                    {isAdmin && (
+                                    {isAdmin && book.status === 'available' && (
                                         <>
                                             <button
                                                 onClick={() => handleEdit(book)}
