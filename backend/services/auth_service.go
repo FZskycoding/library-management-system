@@ -1,27 +1,40 @@
 package services
 
 import (
-	"errors"
-	"library-sys/config"
-	"library-sys/models"
-	"strings"
-	"time"
+"errors"
+"library-sys/config"
+"library-sys/models"
+"strings"
+"sync"
+"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
+var (
+    serverStartTime time.Time
+    once           sync.Once
+)
+
+func init() {
+    once.Do(func() {
+        serverStartTime = time.Now()
+    })
+}
+
 type AuthService struct {
-	db     *gorm.DB
-	config *config.Config
+    db     *gorm.DB
+    config *config.Config
 }
 
 type Claims struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
-	IsAdmin  bool   `json:"is_admin"`
-	jwt.RegisteredClaims
+    UserID          uint      `json:"user_id"`
+    Username        string    `json:"username"`
+    IsAdmin         bool      `json:"is_admin"`
+    ServerStartTime time.Time `json:"server_start_time"`
+    jwt.RegisteredClaims
 }
 
 func CreateAuthService(db *gorm.DB, config *config.Config) *AuthService {
@@ -93,12 +106,13 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.LoginResponse, er
 
 // GenerateToken 生成 JWT token
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
-	// 設置 JWT 聲明
-claims := &Claims{
-UserID:   user.ID,
-Username: user.Username,
-IsAdmin:  user.IsAdmin,
-RegisteredClaims: jwt.RegisteredClaims{
+    // 設置 JWT 聲明
+    claims := &Claims{
+        UserID:          user.ID,
+        Username:        user.Username,
+        IsAdmin:         user.IsAdmin,
+        ServerStartTime: serverStartTime,
+        RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(s.config.JWT.ExpireHours))),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -129,11 +143,16 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	if !token.Valid {
-		return nil, errors.New("無效的登入憑證")
-	}
+if !token.Valid {
+    return nil, errors.New("無效的登入憑證")
+}
 
-	return claims, nil
+// 檢查伺服器啟動時間
+if !claims.ServerStartTime.Equal(serverStartTime) {
+    return nil, errors.New("伺服器已重啟，請重新登入")
+}
+
+return claims, nil
 }
 
 func (s *AuthService) Logout(tokenString string) error {
