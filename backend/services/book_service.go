@@ -110,7 +110,7 @@ func (s *BookService) BorrowBook(id int, borrowRequest *models.BorrowRequest) (*
 
 // ReturnBook 還書
 func (s *BookService) ReturnBook(id int, returnRequest *models.ReturnRequest) (*models.Book, error) {
-	tx := s.db.Begin()
+	tx := s.db.Begin() //建立一個transaction
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
@@ -123,21 +123,17 @@ func (s *BookService) ReturnBook(id int, returnRequest *models.ReturnRequest) (*
 		return nil, err
 	}
 
-	if book.Status == models.StatusAvailable {
-		tx.Rollback()
-		return nil, models.ErrBookNotBorrowed
-	}
-
+	//檢查還書人是否等於借書人
 	if book.Borrower != returnRequest.Borrower {
 		tx.Rollback()
 		return nil, models.ErrWrongBorrower
 	}
 
+	//更新書本狀態，並存回資料庫
 	book.Status = models.StatusAvailable
 	book.Borrower = ""
 	book.Note = ""
 	book.BorrowedAt = nil
-
 	if err := tx.Save(&book).Error; err != nil {
 		tx.Rollback()
 		return nil, err

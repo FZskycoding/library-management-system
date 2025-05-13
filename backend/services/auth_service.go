@@ -18,6 +18,7 @@ var (
     once           sync.Once
 )
 
+//在執行main前會自動執行
 func init() {
     once.Do(func() {
         serverStartTime = time.Now()
@@ -29,6 +30,7 @@ type AuthService struct {
     config *config.Config
 }
 
+//登入憑證
 type Claims struct {
     UserID          uint      `json:"user_id"`
     Username        string    `json:"username"`
@@ -155,6 +157,7 @@ if !claims.ServerStartTime.Equal(serverStartTime) {
 return claims, nil
 }
 
+//用戶登出
 func (s *AuthService) Logout(tokenString string) error {
 	// 先驗證 token
 	claims, err := s.ValidateToken(tokenString)
@@ -162,7 +165,7 @@ func (s *AuthService) Logout(tokenString string) error {
 		return err
 	}
 
-	// 加入黑名單
+	// 將Token加入黑名單
 	blacklist := &models.TokenBlacklist{
 		Token:     tokenString,
 		ExpiresAt: time.Unix(claims.ExpiresAt.Unix(), 0),
