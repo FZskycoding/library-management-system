@@ -1,12 +1,12 @@
 package services
 
 import (
-"errors"
-"library-sys/config"
-"library-sys/models"
-"strings"
-"sync"
-"time"
+	"errors"
+	"library-sys/config"
+	"library-sys/models"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -14,29 +14,20 @@ import (
 )
 
 var (
-    serverStartTime time.Time
-    once           sync.Once
+	serverStartTime time.Time
+	once            sync.Once
 )
 
-//在執行main前會自動執行
+// 在執行main前會自動執行
 func init() {
-    once.Do(func() {
-        serverStartTime = time.Now()
-    })
+	once.Do(func() {
+		serverStartTime = time.Now()
+	})
 }
 
 type AuthService struct {
-    db     *gorm.DB
-    config *config.Config
-}
-
-//登入憑證
-type Claims struct {
-    UserID          uint      `json:"user_id"`
-    Username        string    `json:"username"`
-    IsAdmin         bool      `json:"is_admin"`
-    ServerStartTime time.Time `json:"server_start_time"`
-    jwt.RegisteredClaims
+	db     *gorm.DB
+	config *config.Config
 }
 
 func CreateAuthService(db *gorm.DB, config *config.Config) *AuthService {
@@ -108,13 +99,13 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.LoginResponse, er
 
 // GenerateToken 生成 JWT token
 func (s *AuthService) GenerateToken(user *models.User) (string, error) {
-    // 設置 JWT 聲明
-    claims := &Claims{
-        UserID:          user.ID,
-        Username:        user.Username,
-        IsAdmin:         user.IsAdmin,
-        ServerStartTime: serverStartTime,
-        RegisteredClaims: jwt.RegisteredClaims{
+	// 設置 JWT 聲明
+	claims := &models.Claims{
+		UserID:          user.ID,
+		Username:        user.Username,
+		IsAdmin:         user.IsAdmin,
+		ServerStartTime: serverStartTime,
+		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(s.config.JWT.ExpireHours))),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -129,13 +120,13 @@ func (s *AuthService) GenerateToken(user *models.User) (string, error) {
 }
 
 // ValidateToken 驗證 JWT token
-func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
+func (s *AuthService) ValidateToken(tokenString string) (*models.Claims, error) {
 	// 添加黑名單檢查
 	var blacklistedToken models.TokenBlacklist
 	if err := s.db.Where("token = ?", tokenString).First(&blacklistedToken).Error; err == nil {
 		return nil, errors.New("此登入憑證已失效")
 	}
-	claims := &Claims{}
+	claims := &models.Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.config.JWT.SecretKey), nil
@@ -145,19 +136,19 @@ func (s *AuthService) ValidateToken(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-if !token.Valid {
-    return nil, errors.New("無效的登入憑證")
+	if !token.Valid {
+		return nil, errors.New("無效的登入憑證")
+	}
+
+	// 檢查伺服器啟動時間
+	if !claims.ServerStartTime.Equal(serverStartTime) {
+		return nil, errors.New("伺服器已重啟，請重新登入")
+	}
+
+	return claims, nil
 }
 
-// 檢查伺服器啟動時間
-if !claims.ServerStartTime.Equal(serverStartTime) {
-    return nil, errors.New("伺服器已重啟，請重新登入")
-}
-
-return claims, nil
-}
-
-//用戶登出
+// 用戶登出
 func (s *AuthService) Logout(tokenString string) error {
 	// 先驗證 token
 	claims, err := s.ValidateToken(tokenString)
